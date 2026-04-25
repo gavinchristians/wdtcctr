@@ -1,11 +1,22 @@
+import { useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
+import { CameraRig } from './scene/CameraRig';
+import { DevOverlay } from './scene/DevOverlay';
+import { Ground } from './scene/Ground';
+import { Lights } from './scene/Lights';
+import { PlaceholderChicken } from './entities/PlaceholderChicken';
 
 const FOG_COLOR = '#bfe4ff';
-const GROUND_COLOR = '#7ec850';
 
+/**
+ * Top-level Three.js scene. Owns the shared chicken position ref so the
+ * camera can follow the placeholder without relying on a global store.
+ * Phase 5 will replace this ref with a Zustand selector.
+ */
 export function Scene(): JSX.Element {
+  const chickenPosition = useRef(new THREE.Vector3(0, 0, 0));
+
   return (
     <Canvas
       data-testid="game-canvas"
@@ -21,25 +32,11 @@ export function Scene(): JSX.Element {
       <color attach="background" args={[FOG_COLOR]} />
       <fog attach="fog" args={[FOG_COLOR, 30, 80]} />
 
-      <OrthographicCamera makeDefault position={[20, 20, 20]} zoom={40} near={0.1} far={200} />
-
-      <hemisphereLight args={['#bfe4ff', '#3a5a2a', 0.6]} />
-      <directionalLight
-        castShadow
-        position={[10, 18, 6]}
-        intensity={1.2}
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
-      />
-
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial color={GROUND_COLOR} />
-      </mesh>
+      <CameraRig target={chickenPosition} />
+      <Lights />
+      <Ground />
+      <PlaceholderChicken positionRef={chickenPosition} />
+      <DevOverlay />
     </Canvas>
   );
 }

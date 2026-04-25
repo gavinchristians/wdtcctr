@@ -1,0 +1,65 @@
+import { useCallback, useMemo, useRef, type RefObject } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+import { useDirectionalInput } from '../engine/input/useDirectionalInput';
+import { DIRECTION_OFFSET, type Direction, type Tile, addTile, tileToWorld } from '../world/grid';
+
+/**
+ * Stiffness chosen so a hop reaches ~99% completion in roughly 120 ms,
+ * giving the placeholder a snappy-but-readable slide. Phase 3 replaces the
+ * lerp with a proper hop arc.
+ */
+const SLIDE_STIFFNESS = 38;
+
+/** Visible side length of the placeholder cube in world units. */
+const CUBE_SIZE = 0.7;
+
+interface PlaceholderChickenProps {
+  /**
+   * Outwardly mutable ref the camera reads each frame. The chicken keeps
+   * this in sync with its rendered mesh position so the camera follows
+   * the *visible* chicken, not just its logical tile.
+   */
+  positionRef: RefObject<THREE.Vector3>;
+}
+
+export function PlaceholderChicken({ positionRef }: PlaceholderChickenProps): JSX.Element {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const currentTile = useRef<Tile>({ x: 0, z: 0 });
+  const targetTile = useRef<Tile>({ x: 0, z: 0 });
+  const targetWorld = useMemo(() => new THREE.Vector3(), []);
+
+  const handleDirection = useCallback((dir: Direction) => {
+    targetTile.current = addTile(targetTile.current, DIRECTION_OFFSET[dir]);
+  }, []);
+  useDirectionalInput(handleDirection);
+
+  useFrame((_, delta) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+
+    // tileToWorld returns y=0; keep the mesh resting on the ground by
+    // preserving the cube's vertical offset when interpolating.
+    tileToWorld(targetTile.current, targetWorld);
+    targetWorld.y = CUBE_SIZE / 2;
+
+    const t = 1 - Math.exp(-SLIDE_STIFFNESS * delta);
+    mesh.position.lerp(targetWorld, t);
+
+    if (mesh.position.distanceToSquared(targetWorld) < 1e-6) {
+      mesh.position.copy(targetWorld);
+      currentTile.current = { ...targetTile.current };
+    }
+
+    if (positionRef.current) {
+      positionRef.current.copy(mesh.position);
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} position={[0, CUBE_SIZE / 2, 0]} castShadow>
+      <boxGeometry args={[CUBE_SIZE, CUBE_SIZE, CUBE_SIZE]} />
+      <meshStandardMaterial color="#fafafa" />
+    </mesh>
+  );
+}
