@@ -18,14 +18,24 @@ const CUBE_SIZE = 0.7;
 
 interface PlaceholderChickenProps {
   /**
-   * Outwardly mutable ref the camera reads each frame. The chicken keeps
-   * this in sync with its rendered mesh position so the camera follows
-   * the *visible* chicken, not just its logical tile.
+   * Outwardly mutable ref reflecting the chicken's *visible* mesh position.
+   * Use this for visuals tied to the chicken itself (dev overlay, future
+   * collision FX, etc.).
    */
   positionRef: RefObject<THREE.Vector3>;
+  /**
+   * Outwardly mutable ref reflecting the chicken's *target* tile in world
+   * units. This is a clean step function (changes only on accepted hops)
+   * so anything that smooths it - the camera, in particular - will glide
+   * without absorbing the per-hop slide jitter from the visible chicken.
+   */
+  cameraTargetRef: RefObject<THREE.Vector3>;
 }
 
-export function PlaceholderChicken({ positionRef }: PlaceholderChickenProps): JSX.Element {
+export function PlaceholderChicken({
+  positionRef,
+  cameraTargetRef,
+}: PlaceholderChickenProps): JSX.Element {
   const meshRef = useRef<THREE.Mesh>(null);
   const currentTile = useRef<Tile>({ x: 0, z: 0 });
   const targetTile = useRef<Tile>({ x: 0, z: 0 });
@@ -39,7 +49,9 @@ export function PlaceholderChicken({ positionRef }: PlaceholderChickenProps): JS
       // input if the next tile is occupied/out-of-bounds; Phase 4 swaps
       // this for a proper queued hop with hazard detection.
       const proposed = addTile(targetTile.current, DIRECTION_OFFSET[dir]);
-      if (isBlocked(proposed, world)) return;
+      if (isBlocked(proposed, world)) {
+        return;
+      }
       targetTile.current = proposed;
     },
     [world],
@@ -65,6 +77,9 @@ export function PlaceholderChicken({ positionRef }: PlaceholderChickenProps): JS
 
     if (positionRef.current) {
       positionRef.current.copy(mesh.position);
+    }
+    if (cameraTargetRef.current) {
+      cameraTargetRef.current.copy(targetWorld);
     }
   });
 

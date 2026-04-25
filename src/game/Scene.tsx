@@ -20,6 +20,9 @@ const FOG_COLOR = '#bfe4ff';
  */
 export function Scene(): JSX.Element {
   const chickenPosition = useRef(new THREE.Vector3(0, 0, 0));
+  // Camera follows the chicken's *target* position, not its visibly-bobbing
+  // mesh position. This gives smooth scrolling regardless of hop animation.
+  const cameraTarget = useRef(new THREE.Vector3(0, 0, 0));
 
   return (
     <Canvas
@@ -37,12 +40,12 @@ export function Scene(): JSX.Element {
       <fog attach="fog" args={[FOG_COLOR, 30, 80]} />
 
       <WorldProvider>
-        <CameraRig target={chickenPosition} />
+        <CameraRig target={cameraTarget} />
         <Lights />
         <Lanes />
         <Obstacles />
         <KillZone />
-        <PlaceholderChicken positionRef={chickenPosition} />
+        <PlaceholderChicken positionRef={chickenPosition} cameraTargetRef={cameraTarget} />
         <DevOverlay chickenPosition={chickenPosition} />
       </WorldProvider>
     </Canvas>
