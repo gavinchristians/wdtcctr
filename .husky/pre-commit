@@ -1,0 +1,1 @@
+cd chicken-3d && npx lint-staged
