@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useDirectionalInput } from '../engine/input/useDirectionalInput';
 import { DIRECTION_OFFSET, type Direction, type Tile, addTile, tileToWorld } from '../world/grid';
+import { isBlocked } from '../world/lanes/occupancy';
+import { useWorld } from '../world/lanes/useWorld';
 
 /**
  * Stiffness chosen so a hop reaches ~99% completion in roughly 120 ms,
@@ -28,10 +30,20 @@ export function PlaceholderChicken({ positionRef }: PlaceholderChickenProps): JS
   const currentTile = useRef<Tile>({ x: 0, z: 0 });
   const targetTile = useRef<Tile>({ x: 0, z: 0 });
   const targetWorld = useMemo(() => new THREE.Vector3(), []);
+  const world = useWorld();
 
-  const handleDirection = useCallback((dir: Direction) => {
-    targetTile.current = addTile(targetTile.current, DIRECTION_OFFSET[dir]);
-  }, []);
+  const handleDirection = useCallback(
+    (dir: Direction) => {
+      // Plan a hop from the current logical target so rapid inputs still
+      // chain forward correctly (matching Phase 1 behaviour). Reject the
+      // input if the next tile is occupied/out-of-bounds; Phase 4 swaps
+      // this for a proper queued hop with hazard detection.
+      const proposed = addTile(targetTile.current, DIRECTION_OFFSET[dir]);
+      if (isBlocked(proposed, world)) return;
+      targetTile.current = proposed;
+    },
+    [world],
+  );
   useDirectionalInput(handleDirection);
 
   useFrame((_, delta) => {

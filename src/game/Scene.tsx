@@ -3,16 +3,20 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CameraRig } from './scene/CameraRig';
 import { DevOverlay } from './scene/DevOverlay';
-import { Ground } from './scene/Ground';
+import { KillZone } from './scene/KillZone';
+import { Lanes } from './scene/Lanes';
 import { Lights } from './scene/Lights';
+import { Obstacles } from './scene/Obstacles';
 import { PlaceholderChicken } from './entities/PlaceholderChicken';
+import { WorldProvider } from './world/lanes/useWorld';
 
 const FOG_COLOR = '#bfe4ff';
 
 /**
  * Top-level Three.js scene. Owns the shared chicken position ref so the
  * camera can follow the placeholder without relying on a global store.
- * Phase 5 will replace this ref with a Zustand selector.
+ * The WorldProvider mounts a single procedural-world instance for every
+ * downstream component to read.
  */
 export function Scene(): JSX.Element {
   const chickenPosition = useRef(new THREE.Vector3(0, 0, 0));
@@ -32,11 +36,15 @@ export function Scene(): JSX.Element {
       <color attach="background" args={[FOG_COLOR]} />
       <fog attach="fog" args={[FOG_COLOR, 30, 80]} />
 
-      <CameraRig target={chickenPosition} />
-      <Lights />
-      <Ground />
-      <PlaceholderChicken positionRef={chickenPosition} />
-      <DevOverlay />
+      <WorldProvider>
+        <CameraRig target={chickenPosition} />
+        <Lights />
+        <Lanes />
+        <Obstacles />
+        <KillZone />
+        <PlaceholderChicken positionRef={chickenPosition} />
+        <DevOverlay chickenPosition={chickenPosition} />
+      </WorldProvider>
     </Canvas>
   );
 }

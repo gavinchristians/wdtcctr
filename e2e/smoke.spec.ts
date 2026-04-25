@@ -19,9 +19,21 @@ test('app boots and renders the game canvas', async ({ page }) => {
   expect(size.width).toBeGreaterThan(0);
   expect(size.height).toBeGreaterThan(0);
 
-  // Drive the directional input pipeline; if any handler throws (bad ref,
-  // missing event listener, etc.) it surfaces as a pageerror.
-  await page.keyboard.press('ArrowRight');
+  // Walk forward across the spawn lanes; this exercises the world hookup,
+  // occupancy lookups, and camera follow without any expectations about
+  // which tiles are open beyond the START_GRASS_LANES carve-out.
+  for (let i = 0; i < 6; i += 1) {
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(60);
+  }
+
+  // Slam into the kill zone repeatedly - inputs should be rejected
+  // silently rather than throwing or blanking the canvas.
+  for (let i = 0; i < 12; i += 1) {
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForTimeout(20);
+  }
+
   await page.waitForTimeout(200);
 
   await expect(canvas).toBeVisible();
