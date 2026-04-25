@@ -27,6 +27,15 @@ test('app boots and renders the game canvas', async ({ page }) => {
     await page.waitForTimeout(60);
   }
 
+  // Exercise the Phase 3 yaw + input-queue paths: a right-then-up sequence
+  // rotates the chicken twice in quick succession, stressing the queue's
+  // single-slot capacity. This used to be the path most likely to throw if
+  // queueing/yaw-dampening regressed.
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(40);
+  await page.keyboard.press('ArrowUp');
+  await page.waitForTimeout(200);
+
   // Slam into the kill zone repeatedly - inputs should be rejected
   // silently rather than throwing or blanking the canvas.
   for (let i = 0; i < 12; i += 1) {
