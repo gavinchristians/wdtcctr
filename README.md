@@ -9,7 +9,7 @@ targets a polished, Crossy-Road-style web experience.
 
 ## Stack
 
-- **Vite 5** + **React 18** + **TypeScript 5** (strict)
+- **Vite 7** + **React 18** + **TypeScript 5** (strict)
 - **three.js** via **@react-three/fiber** + **@react-three/drei**
 - **zustand** for game state (added now to avoid retrofitting later)
 - **ESLint** (flat config) + **Prettier** + **EditorConfig**

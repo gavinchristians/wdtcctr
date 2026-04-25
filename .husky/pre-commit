@@ -1,1 +1,10 @@
-cd chicken-3d && npx lint-staged
+#!/usr/bin/env sh
+# This hook lives at chicken-3d/.husky/pre-commit, so the chicken-3d/
+# directory is always two levels up from this script. Resolving relative to
+# the script's own location makes the hook work regardless of which git repo
+# invokes it (the inner chicken-3d repo or the outer games monorepo) and
+# regardless of the cwd at hook invocation time.
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+chicken_dir="$(dirname "$script_dir")"
+cd "$chicken_dir" || exit 1
+npx lint-staged
